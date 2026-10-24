@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mickey Retro Arcade // Steam Privado</title>
+  
+  <!-- Configuración Anti-Zoom y PWA para iPadOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mickey Arcade">
+  <meta name="theme-color" content="#09090b">
+  
+  <!-- Iconos PWA y Favicon -->
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Estilos Maestros -->
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ====================================================================
+       PANTALLA 1: SELECTOR DE PERFILES (ESTILO NETFLIX)
+       ==================================================================== -->
+  <section id="screen-profile">
+    <div class="netflix-header">
+      <div class="netflix-logo">🐭 MICKEY RETRO ARCADE</div>
+      <h1 class="netflix-title">¿Quién va a jugar hoy?</h1>
+    </div>
+
+    <div class="profiles-container">
+      <div class="profile-card" id="profile-javier" role="button" tabindex="0">
+        <div class="profile-avatar-wrapper">
+          <img src="assets/icons/javier_avatar.png" alt="Perfil Javier">
+          <span class="profile-badge">VIP GAMER 👑</span>
+        </div>
+        <span class="profile-name">JAVIER</span>
+        <span class="profile-subtext">Toca para entrar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       PANTALLA 2: STEAM LAUNCHER (CATÁLOGO DE JUEGOS)
+       ==================================================================== -->
+  <section id="screen-launcher">
+    <!-- Barra superior -->
+    <header class="launcher-topbar">
+      <div class="topbar-left">
+        <div class="brand-icon">🐭</div>
+        <div>
+          <span class="brand-title">MICKEY ARCADE</span>
+          <span class="brand-tag">STEAM PRIVADO</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="status-pill">
+          <div class="status-indicator"></div>
+          <span id="audio-status-text">Audio: Activo</span>
+        </div>
+        <div class="status-pill">
+          <span id="gamepad-status-text">Mando: Táctil Activo</span>
+        </div>
+        <button class="btn-profile-switch" id="btn-switch-profile" type="button">
+          <span>👤</span> Perfil: Javier
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de Filtros -->
+    <nav class="filter-bar" aria-label="Filtro de consolas">
+      <button class="filter-btn active" data-filter="all" type="button">● TODOS (6)</button>
+      <button class="filter-btn" data-filter="gba" type="button">🎮 GBA (Recomendado iPad)</button>
+      <button class="filter-btn" data-filter="genesis" type="button">⚡ SEGA GENESIS</button>
+      <button class="filter-btn" data-filter="snes" type="button">🍄 SUPER NINTENDO</button>
+    </nav>
+
+    <!-- Contenido del Catálogo -->
+    <main class="catalog-content">
+      <div class="games-grid" id="games-grid">
+        <!-- Renderizado dinámico desde app.js -->
+      </div>
+    </main>
+  </section>
+
+  <!-- ====================================================================
+       PANTALLA 3: VIEWPORT DE EMULACIÓN (EMULATORJS)
+       ==================================================================== -->
+  <section id="screen-game">
+    <div class="game-hud-top">
+      <button class="btn-exit-game" id="btn-exit-game" type="button">
+        <span>⬅</span> Volver al Catálogo
+      </button>
+
+      <span class="current-game-title" id="current-game-title">Cargando Juego...</span>
+
+      <div class="game-hud-right">
+        <span>● 60 FPS</span>
+        <span>💾 Partidas en iPad</span>
+      </div>
+    </div>
+
+    <div class="emulator-container" id="emulator-container">
+      <div id="game-player"></div>
+    </div>
+  </section>
+
+  <!-- Script Lógico Principal -->
+  <script src="js/app.js"></script>
+</body>
+</html>
