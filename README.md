@@ -1,6 +1,6 @@
-# 🐭 MICKEY RETRO ARCADE // STEAM PRIVADO (Javier Edition)
+# 🕹️ RETRO ARCADE // STEAM PRIVADO (Javier Edition)
 
-> Plataforma WebAssembly privada de videojuegos retro de Mickey Mouse, diseñada específicamente para iPadOS, pantallas táctiles y mandos Bluetooth.
+> Plataforma WebAssembly privada de videojuegos retro (Mickey Mouse, Mario, Sonic y Carreras), diseñada específicamente para iPadOS, pantallas táctiles y mandos Bluetooth.
 
 ---
 
@@ -11,9 +11,13 @@
 | 1 | **Disney's Magical Quest 1** | Game Boy Advance | `gba` | Capcom (2002). Mickey y Minnie cambian de trajes mágicos. 2 botones (A/B), ideal pantalla táctil. |
 | 2 | **The Great Circus Mystery (MQ 2)** | Game Boy Advance | `gba` | Capcom (2003). Aventura en el circo embrujado con trajes de vaquero y trepador. |
 | 3 | **Magical Quest 3** | Game Boy Advance | `gba` | Capcom (2004). Cooperativo con el Pato Donald, armaduras medievales. |
-| 4 | **Castle of Illusion** | Sega Genesis | `segaMD` | Sega (1990). La legendaria aventura en el castillo de la bruja Mizrabel. 3 botones. |
-| 5 | **World of Illusion** | Sega Genesis | `segaMD` | Sega (1992). Magia cooperativa con Mickey y Donald. |
-| 6 | **Mickey Mania: The Timeless Adventures** | Super Nintendo | `snes` | Traveller's Tales (1994). Viaje interactivo por las caricaturas desde 1928 a color. |
+| 4 | **Super Mario World (SMA 2)** | Game Boy Advance | `gba` | Nintendo (2001). El clásico rey de plataformas de Mario y Yoshi adaptado a GBA. |
+| 5 | **Sonic Advance** | Game Boy Advance | `gba` | Sega / Dimps (2001). Plataformas a toda velocidad con Sonic, Tails, Knuckles y Amy. |
+| 6 | **Mario Kart: Super Circuit** | Game Boy Advance | `gba` | Nintendo (2001). Grand Prix clásico de karts, caparazones y 40 circuitos. |
+| 7 | **Need for Speed: Most Wanted** | Game Boy Advance | `gba` | EA Games (2005). Carreras urbanas en 3D, persecuciones policiales y tuning. |
+| 8 | **Castle of Illusion** | Sega Genesis | `segaMD` | Sega (1990). La legendaria aventura en el castillo de la bruja Mizrabel. 3 botones. |
+| 9 | **World of Illusion** | Sega Genesis | `segaMD` | Sega (1992). Magia cooperativa con Mickey y Donald. |
+| 10 | **Mickey Mania: The Timeless Adventures** | Super Nintendo | `snes` | Traveller's Tales (1994). Viaje interactivo por las caricaturas desde 1928 a color. |
 
 ---
 

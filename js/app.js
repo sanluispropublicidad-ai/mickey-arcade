@@ -70,6 +70,50 @@ const GAMES_CATALOG = [
     cover: "assets/covers/mickey_mania.png",
     details: "Traveller's Tales · 1994 · Animación Clásica",
     tag: "1928 a 1994"
+  },
+  {
+    id: "smw",
+    title: "Super Mario World",
+    subtitle: "Super Mario Advance 2",
+    console: "gba",
+    core: "gba",
+    rom: "roms/super_mario_world.gba",
+    cover: "assets/covers/super_mario_world.png",
+    details: "Nintendo · 2001 · Plataformas · Mario & Yoshi",
+    tag: "Clásico Legendario"
+  },
+  {
+    id: "sonic",
+    title: "Sonic Advance",
+    subtitle: "Sonic The Hedgehog",
+    console: "gba",
+    core: "gba",
+    rom: "roms/sonic_advance.gba",
+    cover: "assets/covers/sonic_advance.png",
+    details: "Sega / Dimps · 2001 · Alta Velocidad · 4 Personajes",
+    tag: "Velocidad Pura"
+  },
+  {
+    id: "mariokart",
+    title: "Mario Kart: Super Circuit",
+    subtitle: "Grand Prix & Batalla",
+    console: "gba",
+    core: "gba",
+    rom: "roms/mario_kart.gba",
+    cover: "assets/covers/mario_kart.png",
+    details: "Nintendo · 2001 · Carreras · 40 Pistas",
+    tag: "Carreras Arcade"
+  },
+  {
+    id: "nfs",
+    title: "Need for Speed: Most Wanted",
+    subtitle: "Blacklist Carreras Callejeras",
+    console: "gba",
+    core: "gba",
+    rom: "roms/need_for_speed.gba",
+    cover: "assets/covers/need_for_speed.png",
+    details: "EA Games · 2005 · Carreras 3D · Persecuciones",
+    tag: "Carreras Tuning"
   }
 ];
 
