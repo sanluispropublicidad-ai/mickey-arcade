@@ -176,8 +176,8 @@
        -------------------------------------------------------------------- */
     .dpad-container {
       position: absolute;
-      left: 20px;
-      bottom: 24px;
+      left: calc(20px + env(safe-area-inset-left, 0px));
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       width: 160px;
       height: 160px;
       pointer-events: auto;
@@ -258,8 +258,8 @@
        -------------------------------------------------------------------- */
     .actions-container {
       position: absolute;
-      right: 20px;
-      bottom: 24px;
+      right: calc(20px + env(safe-area-inset-right, 0px));
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       width: 170px;
       height: 170px;
       pointer-events: auto;
@@ -382,7 +382,7 @@
        -------------------------------------------------------------------- */
     .meta-container {
       position: absolute;
-      bottom: 18px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -422,19 +422,21 @@
     }
 
     /* ====================================================================
-       MODO RETRATO (CELULARES VERTICALES / GAMEBOY STYLE)
+       MODO RETRATO (PANTALLAS VERTICALES / GAMEBOY STYLE)
        ==================================================================== */
-    @media (orientation: portrait) and (max-width: 768px) {
+    @media (orientation: portrait) {
       #game-container {
         position: relative;
-        height: 48vh;
+        height: 50%;
+        height: 50dvh;
         width: 100%;
         background: #000;
       }
 
       #touch-overlay {
         position: relative;
-        height: 52vh;
+        height: 50%;
+        height: 50dvh;
         width: 100%;
         background: linear-gradient(180deg, #09090b 0%, #141419 100%);
         border-top: 2px solid rgba(255, 255, 255, 0.1);
@@ -442,40 +444,40 @@
       }
 
       .dpad-container {
-        left: 14px;
-        bottom: 30px;
+        left: calc(14px + env(safe-area-inset-left, 0px));
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
         width: 150px;
         height: 150px;
       }
 
       .actions-container {
-        right: 14px;
-        bottom: 30px;
+        right: calc(14px + env(safe-area-inset-right, 0px));
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
         width: 155px;
         height: 155px;
       }
 
       .btn-action {
-        width: 54px;
-        height: 54px;
+        width: 56px;
+        height: 56px;
         font-size: 1.15rem;
       }
 
       .trigger-btn {
         top: 12px;
-        width: 66px;
-        height: 36px;
-        font-size: 0.85rem;
+        width: 72px;
+        height: 38px;
+        font-size: 0.9rem;
       }
 
       .meta-container {
-        bottom: 14px;
-        gap: 12px;
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        gap: 14px;
       }
       .btn-pill {
-        width: 64px;
-        height: 26px;
-        font-size: 0.65rem;
+        width: 68px;
+        height: 28px;
+        font-size: 0.68rem;
       }
     }
   </style>
