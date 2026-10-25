@@ -265,7 +265,7 @@ function renderGamesGrid() {
   });
 }
 
-// 7. Lanzador de Juego en WebAssembly (EmulatorJS)
+// 7. Lanzador de Juego en WebAssembly (EmulatorJS sandbox iframe)
 function launchGame(game) {
   state.activeGame = game;
   const screenLauncher = document.getElementById("screen-launcher");
@@ -282,25 +282,24 @@ function launchGame(game) {
   screenGame.classList.add("active");
 
   // Limpiar contenedor previo
-  playerContainer.innerHTML = '<div id="game-player"></div>';
+  playerContainer.innerHTML = "";
 
-  // Configurar variables globales de EmulatorJS
-  window.EJS_player = '#game-player';
-  window.EJS_core = game.core;
-  window.EJS_gameUrl = game.rom;
-  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-  window.EJS_gameName = game.title;
-  window.EJS_color = '#ef4444';
-  window.EJS_startOnLoaded = true;
-  window.EJS_virtualGamepad = true;
-  window.EJS_defaultControls = true;
-  window.EJS_fullscreenOnLoad = false;
+  // Crear iframe sandbox aislado para evitar colisiones de memoria y variables globales de EJS
+  const iframe = document.createElement("iframe");
+  iframe.id = "emulator-iframe";
+  const params = new URLSearchParams({
+    core: game.core,
+    rom: game.rom,
+    title: game.title
+  });
+  iframe.src = `player.html?${params.toString()}`;
+  iframe.style.width = "100%";
+  iframe.style.height = "100%";
+  iframe.style.border = "none";
+  iframe.allow = "autoplay; gamepad";
+  iframe.setAttribute("allowfullscreen", "true");
 
-  // Cargar el script del loader de EmulatorJS
-  const loaderScript = document.createElement("script");
-  loaderScript.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
-  loaderScript.id = "ejs-loader-script";
-  document.body.appendChild(loaderScript);
+  playerContainer.appendChild(iframe);
 }
 
 // 8. Salir del juego actual
@@ -309,13 +308,9 @@ function exitCurrentGame() {
   const screenGame = document.getElementById("screen-game");
   const playerContainer = document.getElementById("emulator-container");
 
-  // Quitar script del loader si existe
-  const oldScript = document.getElementById("ejs-loader-script");
-  if (oldScript) oldScript.remove();
-
-  // Limpiar HTML y canvas de EmulatorJS
+  // Destruir iframe para liberar memoria WebAssembly y matar audio/procesos limpios
   if (playerContainer) {
-    playerContainer.innerHTML = '';
+    playerContainer.innerHTML = "";
   }
 
   // Regresar a la vista del launcher
