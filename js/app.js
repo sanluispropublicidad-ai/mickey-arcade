@@ -296,6 +296,9 @@ function launchGame(game) {
   iframe.style.width = "100%";
   iframe.style.height = "100%";
   iframe.style.border = "none";
+  iframe.style.display = "block";
+  iframe.style.touchAction = "none";
+  iframe.setAttribute("scrolling", "no");
   iframe.allow = "autoplay; gamepad";
   iframe.setAttribute("allowfullscreen", "true");
 

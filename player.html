@@ -3,16 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Emulator Player</title>
+  <title>Mickey Arcade Player</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --neon-red: #ef4444;
+      --neon-blue: #3b82f6;
+      --neon-green: #10b981;
+      --neon-yellow: #f59e0b;
+      --neon-purple: #a855f7;
+      --neon-cyan: #06b6d4;
+      --glass-bg: rgba(18, 18, 24, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --glass-glow: rgba(255, 255, 255, 0.08);
+      --active-scale: 0.92;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
       background: #000;
       touch-action: none;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+
+    #app-viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Contenedor del Juego */
+    #game-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
     #game {
       width: 100%;
       height: 100%;
@@ -20,11 +63,470 @@
       align-items: center;
       justify-content: center;
     }
+
+    /* Ocultar barra default y branding de EmulatorJS */
+    .ejs_menu_bar, .ejs_ad_container {
+      display: none !important;
+    }
+
+    /* Barra Superior de Herramientas Quick HUD */
+    #quick-hud {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(12, 12, 16, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #quick-hud.hidden {
+      opacity: 0.15;
+      transform: translateX(-50%) translateY(-6px);
+    }
+    #quick-hud.hidden:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e4e4e7;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    .hud-btn:active {
+      transform: scale(0.94);
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--neon-red);
+      color: #fff;
+    }
+
+    /* ====================================================================
+       OVERLAY DE CONTROLES TÁCTILES MAMALONES
+       ==================================================================== */
+    #touch-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    #touch-overlay.controls-hidden {
+      opacity: 0;
+      pointer-events: none !important;
+    }
+
+    /* Gatillos Superiores L y R */
+    .trigger-btn {
+      position: absolute;
+      top: 14px;
+      width: 76px;
+      height: 40px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 12px;
+      color: #f4f4f5;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
+      touch-action: none;
+    }
+    .trigger-btn#btn-l { left: 16px; }
+    .trigger-btn#btn-r { right: 16px; }
+
+    .trigger-btn.active, .trigger-btn:active {
+      transform: scale(var(--active-scale));
+      background: rgba(239, 68, 68, 0.4);
+      border-color: var(--neon-red);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.5);
+      color: #fff;
+    }
+
+    /* --------------------------------------------------------------------
+       D-PAD RETRO ARCADE (DIRECCIONAL 8 VÍAS)
+       -------------------------------------------------------------------- */
+    .dpad-container {
+      position: absolute;
+      left: 20px;
+      bottom: 24px;
+      width: 160px;
+      height: 160px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .dpad-cross {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(28, 28, 36, 0.85) 0%, rgba(12, 12, 16, 0.9) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), inset 0 2px 6px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Brazos de la cruz */
+    .dpad-arm {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a1a1aa;
+      font-size: 1.1rem;
+      transition: all 0.08s ease;
+      pointer-events: none;
+    }
+    .dpad-arm-up {
+      top: 6px;
+      left: 54px;
+      width: 52px;
+      height: 50px;
+    }
+    .dpad-arm-down {
+      bottom: 6px;
+      left: 54px;
+      width: 52px;
+      height: 50px;
+    }
+    .dpad-arm-left {
+      top: 54px;
+      left: 6px;
+      width: 50px;
+      height: 52px;
+    }
+    .dpad-arm-right {
+      top: 54px;
+      right: 6px;
+      width: 50px;
+      height: 52px;
+    }
+
+    /* Centro del D-Pad */
+    .dpad-center-cap {
+      position: absolute;
+      top: 54px;
+      left: 54px;
+      width: 52px;
+      height: 52px;
+      background: radial-gradient(circle, #27272a 0%, #18181b 100%);
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+    }
+
+    /* Estado activo del D-Pad */
+    .dpad-arm.active {
+      color: #fff;
+      text-shadow: 0 0 12px var(--neon-cyan);
+      transform: scale(1.15);
+    }
+
+    /* --------------------------------------------------------------------
+       BOTONES DE ACCIÓN (A / B / X / Y / C)
+       -------------------------------------------------------------------- */
+    .actions-container {
+      position: absolute;
+      right: 20px;
+      bottom: 24px;
+      width: 170px;
+      height: 170px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .btn-action {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid var(--glass-border);
+      color: #fafafa;
+      font-size: 1.25rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--btn-shadow);
+      transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+      touch-action: none;
+    }
+
+    /* Layout GBA (A / B) */
+    .layout-gba #btn-b {
+      left: 10px;
+      bottom: 20px;
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+    }
+    .layout-gba #btn-a {
+      right: 12px;
+      top: 24px;
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    /* Layout SNES (Y, X, B, A) */
+    .layout-snes #btn-y {
+      left: 10px;
+      top: 55px;
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+    }
+    .layout-snes #btn-x {
+      top: 10px;
+      left: 55px;
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fde68a;
+    }
+    .layout-snes #btn-b {
+      bottom: 10px;
+      left: 55px;
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+    }
+    .layout-snes #btn-a {
+      right: 10px;
+      top: 55px;
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    /* Layout Genesis (A, B, C) */
+    .layout-genesis #btn-a {
+      left: 10px;
+      bottom: 30px;
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+    .layout-genesis #btn-b {
+      left: 58px;
+      top: 40px;
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+    }
+    .layout-genesis #btn-c {
+      right: 10px;
+      top: 15px;
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+    }
+
+    /* Estados Activos de Botones de Acción */
+    .btn-action.active, .btn-action:active {
+      transform: scale(var(--active-scale));
+      color: #fff;
+    }
+    #btn-a.active, #btn-a:active {
+      background: rgba(239, 68, 68, 0.45);
+      border-color: var(--neon-red);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.7), inset 0 0 12px rgba(239, 68, 68, 0.6);
+    }
+    #btn-b.active, #btn-b:active {
+      background: rgba(59, 130, 246, 0.45);
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), inset 0 0 12px rgba(59, 130, 246, 0.6);
+    }
+    #btn-x.active, #btn-x:active {
+      background: rgba(245, 158, 11, 0.45);
+      border-color: var(--neon-yellow);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.7), inset 0 0 12px rgba(245, 158, 11, 0.6);
+    }
+    #btn-y.active, #btn-y:active {
+      background: rgba(16, 185, 129, 0.45);
+      border-color: var(--neon-green);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.7), inset 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+    #btn-c.active, #btn-c:active {
+      background: rgba(16, 185, 129, 0.45);
+      border-color: var(--neon-green);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.7), inset 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+
+    /* --------------------------------------------------------------------
+       BOTONES START & SELECT (PÍLDORAS CLÁSICAS)
+       -------------------------------------------------------------------- */
+    .meta-container {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .btn-pill {
+      background: rgba(24, 24, 30, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      width: 70px;
+      height: 28px;
+      color: #d4d4d8;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transform: rotate(-15deg);
+      transition: all 0.08s ease;
+      touch-action: none;
+    }
+
+    .btn-pill.active, .btn-pill:active {
+      transform: rotate(-15deg) scale(0.92);
+      background: rgba(239, 68, 68, 0.35);
+      border-color: var(--neon-red);
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
+      color: #fff;
+    }
+
+    /* ====================================================================
+       MODO RETRATO (CELULARES VERTICALES / GAMEBOY STYLE)
+       ==================================================================== */
+    @media (orientation: portrait) and (max-width: 768px) {
+      #game-container {
+        position: relative;
+        height: 48vh;
+        width: 100%;
+        background: #000;
+      }
+
+      #touch-overlay {
+        position: relative;
+        height: 52vh;
+        width: 100%;
+        background: linear-gradient(180deg, #09090b 0%, #141419 100%);
+        border-top: 2px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+      }
+
+      .dpad-container {
+        left: 14px;
+        bottom: 30px;
+        width: 150px;
+        height: 150px;
+      }
+
+      .actions-container {
+        right: 14px;
+        bottom: 30px;
+        width: 155px;
+        height: 155px;
+      }
+
+      .btn-action {
+        width: 54px;
+        height: 54px;
+        font-size: 1.15rem;
+      }
+
+      .trigger-btn {
+        top: 12px;
+        width: 66px;
+        height: 36px;
+        font-size: 0.85rem;
+      }
+
+      .meta-container {
+        bottom: 14px;
+        gap: 12px;
+      }
+      .btn-pill {
+        width: 64px;
+        height: 26px;
+        font-size: 0.65rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="game"></div>
 
+  <div id="app-viewport">
+    <!-- Viewport del Emulador -->
+    <main id="game-container">
+      <div id="game"></div>
+    </main>
+
+    <!-- Barra de Herramientas Quick HUD -->
+    <header id="quick-hud" aria-label="Herramientas de emulación">
+      <button class="hud-btn" id="hud-toggle-controls" type="button" title="Mostrar/Ocultar Controles">🎮 Controles</button>
+      <button class="hud-btn" id="hud-haptics" type="button" title="Vibración">📳 Haptic: ON</button>
+      <button class="hud-btn" id="hud-save" type="button" title="Guardar Partida">💾 Guardar</button>
+      <button class="hud-btn" id="hud-load" type="button" title="Cargar Partida">📂 Cargar</button>
+    </header>
+
+    <!-- Overlay de Controles Táctiles Profesionales -->
+    <div id="touch-overlay" class="layout-gba">
+      <!-- Gatillos L y R -->
+      <button class="trigger-btn" id="btn-l" data-input="10" type="button" aria-label="Gatillo L">L</button>
+      <button class="trigger-btn" id="btn-r" data-input="11" type="button" aria-label="Gatillo R">R</button>
+
+      <!-- D-Pad Cruzado 8 Vías -->
+      <div class="dpad-container" id="virtual-dpad">
+        <div class="dpad-cross">
+          <div class="dpad-arm dpad-arm-up" id="dpad-arrow-up">▲</div>
+          <div class="dpad-arm dpad-arm-down" id="dpad-arrow-down">▼</div>
+          <div class="dpad-arm dpad-arm-left" id="dpad-arrow-left">◀</div>
+          <div class="dpad-arm dpad-arm-right" id="dpad-arrow-right">▶</div>
+          <div class="dpad-center-cap"></div>
+        </div>
+      </div>
+
+      <!-- Start y Select -->
+      <div class="meta-container">
+        <button class="btn-pill" id="btn-select" data-input="2" type="button" aria-label="Select">SELECT</button>
+        <button class="btn-pill" id="btn-start" data-input="3" type="button" aria-label="Start">START</button>
+      </div>
+
+      <!-- Clúster Dinámico de Botones de Acción -->
+      <div class="actions-container" id="actions-cluster">
+        <!-- Renderizado dinámicamente según consola (GBA, SNES, Genesis) -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Parámetros y Configuración de EmulatorJS -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const core = urlParams.get('core') || 'gba';
@@ -41,8 +543,328 @@
     window.EJS_gameName = title;
     window.EJS_color = '#ef4444';
     window.EJS_startOnLoaded = true;
-    window.EJS_virtualGamepad = true;
+    window.EJS_virtualGamepad = false; // Desactivar el feo y roto por defecto
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+
+  <!-- Motor Táctil Arcade Mamalón -->
+  <script>
+    (function initArcadeTouchController() {
+      let hapticsEnabled = true;
+      let controlsVisible = true;
+      const activeInputs = new Set();
+      const overlay = document.getElementById('touch-overlay');
+      const cluster = document.getElementById('actions-cluster');
+      const dpad = document.getElementById('virtual-dpad');
+
+      // 1. Configurar botones de acción según el core
+      function setupActionCluster() {
+        overlay.classList.remove('layout-gba', 'layout-snes', 'layout-genesis');
+
+        if (core === 'snes') {
+          overlay.classList.add('layout-snes');
+          cluster.innerHTML = `
+            <button class="btn-action" id="btn-y" data-input="1" type="button" aria-label="Y">Y</button>
+            <button class="btn-action" id="btn-x" data-input="9" type="button" aria-label="X">X</button>
+            <button class="btn-action" id="btn-b" data-input="0" type="button" aria-label="B">B</button>
+            <button class="btn-action" id="btn-a" data-input="8" type="button" aria-label="A">A</button>
+          `;
+        } else if (core === 'segaMD' || core === 'genesis') {
+          overlay.classList.add('layout-genesis');
+          // En segaMD: A=1, B=0, C=8
+          cluster.innerHTML = `
+            <button class="btn-action" id="btn-a" data-input="1" type="button" aria-label="A">A</button>
+            <button class="btn-action" id="btn-b" data-input="0" type="button" aria-label="B">B</button>
+            <button class="btn-action" id="btn-c" data-input="8" type="button" aria-label="C">C</button>
+          `;
+          // Ocultar gatillos en Génesis clásico de 3 botones si se desea o dejarlos
+        } else {
+          // GBA por defecto: B=0, A=8
+          overlay.classList.add('layout-gba');
+          cluster.innerHTML = `
+            <button class="btn-action" id="btn-b" data-input="0" type="button" aria-label="B">B</button>
+            <button class="btn-action" id="btn-a" data-input="8" type="button" aria-label="A">A</button>
+          `;
+        }
+      }
+
+      setupActionCluster();
+
+      // 2. Mapeo de teclas para canal secundario de KeyboardEvent
+      const KEY_FALLBACKS = {
+        4: { key: "ArrowUp", code: "ArrowUp", keyCode: 38 },
+        5: { key: "ArrowDown", code: "ArrowDown", keyCode: 40 },
+        6: { key: "ArrowLeft", code: "ArrowLeft", keyCode: 37 },
+        7: { key: "ArrowRight", code: "ArrowRight", keyCode: 39 },
+        8: { key: "z", code: "KeyZ", keyCode: 90 }, // A
+        0: { key: "x", code: "KeyX", keyCode: 88 }, // B
+        9: { key: "a", code: "KeyA", keyCode: 65 }, // X
+        1: { key: "s", code: "KeyS", keyCode: 83 }, // Y
+        10: { key: "q", code: "KeyQ", keyCode: 81 }, // L
+        11: { key: "e", code: "KeyE", keyCode: 69 }, // R
+        3: { key: "Enter", code: "Enter", keyCode: 13 }, // Start
+        2: { key: "v", code: "KeyV", keyCode: 86 } // Select
+      };
+
+      // 3. Envío dual de entradas a EmulatorJS
+      function sendInput(inputVal, isDown) {
+        if (isDown) {
+          if (!activeInputs.has(inputVal)) {
+            activeInputs.add(inputVal);
+            // Canal primario directo a WebAssembly
+            if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+              try {
+                window.EJS_emulator.gameManager.simulateInput(0, inputVal, 1);
+              } catch(e) {}
+            }
+            // Canal secundario: teclado
+            dispatchKeyEvent(inputVal, 'keydown');
+
+            if (hapticsEnabled && navigator.vibrate) {
+              try { navigator.vibrate(12); } catch(e) {}
+            }
+          }
+        } else {
+          if (activeInputs.has(inputVal)) {
+            activeInputs.delete(inputVal);
+            if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+              try {
+                window.EJS_emulator.gameManager.simulateInput(0, inputVal, 0);
+              } catch(e) {}
+            }
+            dispatchKeyEvent(inputVal, 'keyup');
+          }
+        }
+      }
+
+      function dispatchKeyEvent(inputVal, eventType) {
+        const k = KEY_FALLBACKS[inputVal];
+        if (!k) return;
+        try {
+          const ev = new KeyboardEvent(eventType, {
+            key: k.key,
+            code: k.code,
+            keyCode: k.keyCode,
+            which: k.keyCode,
+            bubbles: true,
+            cancelable: true
+          });
+          window.dispatchEvent(ev);
+          document.dispatchEvent(ev);
+        } catch(e) {}
+      }
+
+      // 4. Bindings de botones simples (A, B, X, Y, L, R, Start, Select)
+      function bindSimpleButtons() {
+        const buttons = overlay.querySelectorAll('button[data-input]');
+        buttons.forEach(btn => {
+          const inputVal = parseInt(btn.getAttribute('data-input'), 10);
+
+          // Touch
+          btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            btn.classList.add('active');
+            sendInput(inputVal, true);
+          }, { passive: false });
+
+          btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            btn.classList.remove('active');
+            sendInput(inputVal, false);
+          }, { passive: false });
+
+          btn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            btn.classList.remove('active');
+            sendInput(inputVal, false);
+          }, { passive: false });
+
+          // Mouse (para pruebas en Desktop / DevTools)
+          btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            btn.classList.add('active');
+            sendInput(inputVal, true);
+          });
+
+          btn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            btn.classList.remove('active');
+            sendInput(inputVal, false);
+          });
+
+          btn.addEventListener('mouseleave', () => {
+            if (btn.classList.contains('active')) {
+              btn.classList.remove('active');
+              sendInput(inputVal, false);
+            }
+          });
+        });
+      }
+
+      bindSimpleButtons();
+
+      // 5. Motor Multi-Touch y Drag Continuo del D-Pad
+      const dpadUp = document.getElementById('dpad-arrow-up');
+      const dpadDown = document.getElementById('dpad-arrow-down');
+      const dpadLeft = document.getElementById('dpad-arrow-left');
+      const dpadRight = document.getElementById('dpad-arrow-right');
+
+      let dpadTouchId = null;
+
+      function updateDpadFromCoords(clientX, clientY) {
+        const rect = dpad.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        const dist = Math.hypot(dx, dy);
+
+        // Umbral de zona muerta central (~14px)
+        if (dist < 14) {
+          clearDpadDirections();
+          return;
+        }
+
+        // Ángulo en grados (-180 a 180)
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        let up = false, down = false, left = false, right = false;
+
+        if (angle >= -157.5 && angle < -22.5) up = true;
+        if (angle >= 22.5 && angle < 157.5) down = true;
+        if (angle >= 112.5 || angle < -112.5) left = true;
+        if (angle >= -67.5 && angle < 67.5) right = true;
+
+        applyDirection(4, up, dpadUp);
+        applyDirection(5, down, dpadDown);
+        applyDirection(6, left, dpadLeft);
+        applyDirection(7, right, dpadRight);
+      }
+
+      function applyDirection(inputVal, isActive, element) {
+        if (isActive) {
+          element.classList.add('active');
+          sendInput(inputVal, true);
+        } else {
+          element.classList.remove('active');
+          sendInput(inputVal, false);
+        }
+      }
+
+      function clearDpadDirections() {
+        applyDirection(4, false, dpadUp);
+        applyDirection(5, false, dpadDown);
+        applyDirection(6, false, dpadLeft);
+        applyDirection(7, false, dpadRight);
+      }
+
+      dpad.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        dpadTouchId = touch.identifier;
+        updateDpadFromCoords(touch.clientX, touch.clientY);
+      }, { passive: false });
+
+      dpad.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const t = e.changedTouches[i];
+          if (t.identifier === dpadTouchId) {
+            updateDpadFromCoords(t.clientX, t.clientY);
+            break;
+          }
+        }
+      }, { passive: false });
+
+      function endDpadTouch(e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === dpadTouchId) {
+            dpadTouchId = null;
+            clearDpadDirections();
+            break;
+          }
+        }
+      }
+
+      dpad.addEventListener('touchend', endDpadTouch, { passive: false });
+      dpad.addEventListener('touchcancel', endDpadTouch, { passive: false });
+
+      // Soporte Mouse Drag en D-Pad para desktop
+      let isDpadMouseDown = false;
+      dpad.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isDpadMouseDown = true;
+        updateDpadFromCoords(e.clientX, e.clientY);
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (isDpadMouseDown) {
+          updateDpadFromCoords(e.clientX, e.clientY);
+        }
+      });
+      window.addEventListener('mouseup', () => {
+        if (isDpadMouseDown) {
+          isDpadMouseDown = false;
+          clearDpadDirections();
+        }
+      });
+
+      // 6. Quick HUD Control Actions
+      const btnToggle = document.getElementById('hud-toggle-controls');
+      const btnHaptics = document.getElementById('hud-haptics');
+      const btnSave = document.getElementById('hud-save');
+      const btnLoad = document.getElementById('hud-load');
+      const quickHud = document.getElementById('quick-hud');
+
+      btnToggle.addEventListener('click', () => {
+        controlsVisible = !controlsVisible;
+        overlay.classList.toggle('controls-hidden', !controlsVisible);
+        btnToggle.textContent = controlsVisible ? '🎮 Controles: ON' : '🎮 Controles: OFF';
+      });
+
+      btnHaptics.addEventListener('click', () => {
+        hapticsEnabled = !hapticsEnabled;
+        btnHaptics.textContent = hapticsEnabled ? '📳 Haptic: ON' : '📳 Haptic: OFF';
+        if (hapticsEnabled && navigator.vibrate) navigator.vibrate(25);
+      });
+
+      btnSave.addEventListener('click', () => {
+        if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+          try {
+            window.EJS_emulator.gameManager.saveState();
+            btnSave.textContent = '✅ Guardado!';
+            setTimeout(() => btnSave.textContent = '💾 Guardar', 1500);
+          } catch(e) {
+            console.error(e);
+          }
+        }
+      });
+
+      btnLoad.addEventListener('click', () => {
+        if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+          try {
+            window.EJS_emulator.gameManager.loadState();
+            btnLoad.textContent = '✅ Cargado!';
+            setTimeout(() => btnLoad.textContent = '📂 Cargar', 1500);
+          } catch(e) {
+            console.error(e);
+          }
+        }
+      });
+
+      // Auto-ocultar ligeramente la barra tras 4 segundos de inactividad
+      let hudTimer = null;
+      function pokeHud() {
+        quickHud.classList.remove('hidden');
+        clearTimeout(hudTimer);
+        hudTimer = setTimeout(() => {
+          quickHud.classList.add('hidden');
+        }, 4000);
+      }
+      window.addEventListener('touchstart', pokeHud, { passive: true });
+      window.addEventListener('mousemove', pokeHud, { passive: true });
+      pokeHud();
+
+    })();
+  </script>
 </body>
 </html>
