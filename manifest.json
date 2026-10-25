@@ -1,10 +1,10 @@
 {
-  "name": "Mickey Retro Arcade - Javier",
-  "short_name": "Mickey Arcade",
-  "description": "Tu consola retro privada con los mejores juegos clásicos de Mickey Mouse.",
+  "name": "Retro Arcade - Javier",
+  "short_name": "Retro Arcade",
+  "description": "Tu consola retro privada con los mejores juegos clásicos de Mickey, Mario, Sonic y Carreras.",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#09090b",
   "theme_color": "#09090b",
   "icons": [

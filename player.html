@@ -69,6 +69,11 @@
       display: none !important;
     }
 
+    /* Asegurar que el menú de configuración de mandos quede al frente interactivo */
+    .ejs_popup, .ejs_control_body, .ejs_menu, [class*="ejs_"][class*="popup"], [class*="ejs_control"] {
+      z-index: 99999 !important;
+    }
+
     /* Barra Superior de Herramientas Quick HUD */
     #quick-hud {
       position: absolute;
@@ -493,6 +498,7 @@
     <!-- Barra de Herramientas Quick HUD -->
     <header id="quick-hud" aria-label="Herramientas de emulación">
       <button class="hud-btn" id="hud-toggle-controls" type="button" title="Mostrar/Ocultar Controles">🎮 Controles</button>
+      <button class="hud-btn" id="hud-config-gamepad" type="button" title="Configurar Mando o Teclado">🕹️ Config Mando</button>
       <button class="hud-btn" id="hud-haptics" type="button" title="Vibración">📳 Haptic: ON</button>
       <button class="hud-btn" id="hud-save" type="button" title="Guardar Partida">💾 Guardar</button>
       <button class="hud-btn" id="hud-load" type="button" title="Cargar Partida">📂 Cargar</button>
@@ -810,8 +816,92 @@
         }
       });
 
-      // 6. Quick HUD Control Actions
+      // 6. Gestor de persistencia robusto (IndexedDB con fallback a localStorage)
+      const SaveManager = {
+        dbName: 'RetroArcadeSaves',
+        storeName: 'states',
+        db: null,
+
+        async getDB() {
+          if (this.db) return this.db;
+          return new Promise((resolve) => {
+            if (!window.indexedDB) return resolve(null);
+            const req = indexedDB.open(this.dbName, 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains(this.storeName)) {
+                db.createObjectStore(this.storeName);
+              }
+            };
+            req.onsuccess = (e) => {
+              this.db = e.target.result;
+              resolve(this.db);
+            };
+            req.onerror = () => resolve(null);
+          });
+        },
+
+        async saveState(gameKey, uint8Array) {
+          try {
+            const db = await this.getDB();
+            if (db) {
+              return new Promise((resolve) => {
+                const tx = db.transaction(this.storeName, 'readwrite');
+                const store = tx.objectStore(this.storeName);
+                store.put(uint8Array, gameKey);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+              });
+            }
+          } catch(e) {
+            console.warn('IndexedDB save failed, trying localStorage fallback', e);
+          }
+          try {
+            let binary = '';
+            const len = uint8Array.byteLength;
+            for (let i = 0; i < len; i++) {
+              binary += String.fromCharCode(uint8Array[i]);
+            }
+            localStorage.setItem('arcade_save_' + gameKey, btoa(binary));
+            return true;
+          } catch(e) {
+            return false;
+          }
+        },
+
+        async loadState(gameKey) {
+          try {
+            const db = await this.getDB();
+            if (db) {
+              return new Promise((resolve) => {
+                const tx = db.transaction(this.storeName, 'readonly');
+                const store = tx.objectStore(this.storeName);
+                const req = store.get(gameKey);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+              });
+            }
+          } catch(e) {
+            console.warn('IndexedDB load failed', e);
+          }
+          try {
+            const str = localStorage.getItem('arcade_save_' + gameKey);
+            if (str) {
+              const binary = atob(str);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+              }
+              return bytes;
+            }
+          } catch(e) {}
+          return null;
+        }
+      };
+
+      // 7. Quick HUD Control Actions
       const btnToggle = document.getElementById('hud-toggle-controls');
+      const btnConfigGamepad = document.getElementById('hud-config-gamepad');
       const btnHaptics = document.getElementById('hud-haptics');
       const btnSave = document.getElementById('hud-save');
       const btnLoad = document.getElementById('hud-load');
@@ -823,35 +913,82 @@
         btnToggle.textContent = controlsVisible ? '🎮 Controles: ON' : '🎮 Controles: OFF';
       });
 
+      if (btnConfigGamepad) {
+        btnConfigGamepad.addEventListener('click', () => {
+          if (window.EJS_emulator && window.EJS_emulator.controlMenu) {
+            const isHidden = window.EJS_emulator.controlMenu.style.display === 'none' || !window.EJS_emulator.controlMenu.style.display;
+            window.EJS_emulator.controlMenu.style.display = isHidden ? 'block' : 'none';
+          }
+        });
+      }
+
       btnHaptics.addEventListener('click', () => {
         hapticsEnabled = !hapticsEnabled;
         btnHaptics.textContent = hapticsEnabled ? '📳 Haptic: ON' : '📳 Haptic: OFF';
         if (hapticsEnabled && navigator.vibrate) navigator.vibrate(25);
       });
 
-      btnSave.addEventListener('click', () => {
-        if (window.EJS_emulator && window.EJS_emulator.gameManager) {
-          try {
-            window.EJS_emulator.gameManager.saveState();
-            btnSave.textContent = '✅ Guardado!';
-            setTimeout(() => btnSave.textContent = '💾 Guardar', 1500);
-          } catch(e) {
-            console.error(e);
+      btnSave.addEventListener('click', async () => {
+        btnSave.textContent = '⏳ Guardando...';
+        try {
+          let stateBytes = null;
+          if (window.EJS_emulator && window.EJS_emulator.gameManager && typeof window.EJS_emulator.gameManager.getState === 'function') {
+            stateBytes = window.EJS_emulator.gameManager.getState();
           }
+          if (stateBytes && stateBytes.length > 0) {
+            const ok = await SaveManager.saveState(rom, stateBytes);
+            btnSave.textContent = ok ? '✅ Guardado!' : '⚠️ Error guardado';
+          } else if (window.EJS_emulator && window.EJS_emulator.elements && window.EJS_emulator.elements.bottomBar && window.EJS_emulator.elements.bottomBar.saveState) {
+            window.EJS_emulator.elements.bottomBar.saveState[0].click();
+            btnSave.textContent = '✅ Guardado!';
+          } else {
+            btnSave.textContent = '⚠️ Espera arranque';
+          }
+        } catch(e) {
+          console.error(e);
+          btnSave.textContent = '❌ Error';
         }
+        setTimeout(() => btnSave.textContent = '💾 Guardar', 2000);
       });
 
-      btnLoad.addEventListener('click', () => {
-        if (window.EJS_emulator && window.EJS_emulator.gameManager) {
-          try {
-            window.EJS_emulator.gameManager.loadState();
+      btnLoad.addEventListener('click', async () => {
+        btnLoad.textContent = '⏳ Cargando...';
+        try {
+          const savedBytes = await SaveManager.loadState(rom);
+          if (savedBytes && window.EJS_emulator && window.EJS_emulator.gameManager && typeof window.EJS_emulator.gameManager.loadState === 'function') {
+            window.EJS_emulator.gameManager.loadState(savedBytes);
             btnLoad.textContent = '✅ Cargado!';
-            setTimeout(() => btnLoad.textContent = '📂 Cargar', 1500);
-          } catch(e) {
-            console.error(e);
+          } else if (window.EJS_emulator && window.EJS_emulator.elements && window.EJS_emulator.elements.bottomBar && window.EJS_emulator.elements.bottomBar.loadState) {
+            window.EJS_emulator.elements.bottomBar.loadState[0].click();
+            btnLoad.textContent = '✅ Cargado!';
+          } else {
+            btnLoad.textContent = '⚠️ Sin partida';
           }
+        } catch(e) {
+          console.error(e);
+          btnLoad.textContent = '❌ Error';
         }
+        setTimeout(() => btnLoad.textContent = '📂 Cargar', 2000);
       });
+
+      // 8. Detección de mandos Bluetooth / USB y auto-ocultamiento de controles táctiles
+      window.addEventListener('gamepadconnected', (e) => {
+        if (btnConfigGamepad) {
+          btnConfigGamepad.textContent = `🕹️ Mando (${e.gamepad.id.substring(0, 10)}...)`;
+        }
+        overlay.classList.add('gamepad-active');
+      });
+      window.addEventListener('gamepaddisconnected', () => {
+        if (btnConfigGamepad) {
+          btnConfigGamepad.textContent = '🕹️ Config Mando';
+        }
+        overlay.classList.remove('gamepad-active');
+      });
+
+      // 9. Bloqueo estricto de gestos conflictivos de Safari iOS
+      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
 
       // Auto-ocultar ligeramente la barra tras 4 segundos de inactividad
       let hudTimer = null;
